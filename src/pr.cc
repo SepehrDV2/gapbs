@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <iostream>
 #include <vector>
-
+#include <omp.h>
 #include "benchmark.h"
 #include "builder.h"
 #include "command_line.h"
@@ -33,6 +33,7 @@ const float kDamp = 0.85;
 
 pvector<ScoreT> PageRankPullGS(const Graph &g, int max_iters,
                              double epsilon = 0) {
+  omp_set_num_threads(4);
   const ScoreT init_score = 1.0f / g.num_nodes();
   const ScoreT base_score = (1.0f - kDamp) / g.num_nodes();
   pvector<ScoreT> scores(g.num_nodes(), init_score);
@@ -42,7 +43,7 @@ pvector<ScoreT> PageRankPullGS(const Graph &g, int max_iters,
     outgoing_contrib[n] = init_score / g.out_degree(n);
   for (int iter=0; iter < max_iters; iter++) {
     double error = 0;
-    #pragma omp parallel for reduction(+ : error) schedule(dynamic, 16384)
+    #pragma omp parallel for reduction(+ : error) schedule(dynamic, 16)
     for (NodeID u=0; u < g.num_nodes(); u++) {
       ScoreT incoming_total = 0;
       for (NodeID v : g.in_neigh(u))
